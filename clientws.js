@@ -1,60 +1,42 @@
 const http = require('http');
-const WebSocket = require('ws');
-let port = process.argv[2] || 8000;
-let host = process.argv[2] ? 'localhost:' + port : 'exp-sockets.herokuapp.com';
-console.log(host);
-const ws = new WebSocket('ws://' + host);
+const WebSocket = require('socket.io-client');
 
-ws.on('open', function () {
+let host = process.argv[2] || process.exit();
+let forwardPort = process.argv[3] || process.exit();
+
+console.log(host);
+const ws = WebSocket('ws://' + host);
+
+ws.on('connect', function () {
   console.log('connected to server');
 });
 
-ws.on('ping', (stamp) => {
-  const client = new WebSocket('ws://' + host);
-  client.on('open', function () {
-    client.ping(stamp);
-    requestSender(client);
+ws.on('handshake', (stamp) => {
+  const client = WebSocket('ws://' + host);
+  client.on('connect', function () {
+    // console.log('req start');
+    client.emit('handshake', stamp);
+    forwardRequest(client);
   });
 });
-ws.on('message', function (data) {
-  console.log(data);
-});
 
-let requestSender = function (server) {
+let forwardRequest = function (server) {
   let options = {
     hostname: 'localhost',
-    port: 8888,
+    port: forwardPort,
     protocol: 'http:'
   }
-
-  let url = (data) => {
-    options.path = data;
-  }
-
-  let method = (data) => {
-    options.method = data;
-  }
-
-  let reqTransfer = '';
-
-  let headers = (data) => {
-    options.headers = JSON.parse(data);
-    delete options.headers.host;
-    createRequest();
-  };
+  let reqTransfer = undefined;
 
   let createRequest = function () {
     reqTransfer = http.request(options, function (resp) {
-      server.send(resp.statusCode);
-      server.ping();
-      server.send(JSON.stringify(resp.headers));
-      server.ping();
+      server.emit('statuscode', resp.statusCode);
+      server.emit('headers', JSON.stringify(resp.headers));
       resp.on('data', (data) => {
-        server.send(data);
+        server.emit('data', data);
       });
       resp.on('end', () => {
-        server.ping();
-        server.close();
+        server.emit('end');
       });
     });
     reqTransfer.on('error', (e) => {
@@ -62,25 +44,34 @@ let requestSender = function (server) {
     });
   }
 
-  let data = (d) => {
-    reqTransfer.write(d);
-  }
-
-  let end = function () {
-    reqTransfer.end();
-  }
-
-  let collecters = [method, headers, data];
-  let currentCollector = url;
-
-  server.on('message', function (data) {
-    currentCollector(data);
-  });
-
-  server.on('ping', () => {
-    currentCollector = collecters.shift();
-    if (!currentCollector) {
-      end();
-    }
-  });
+  server.on('url', bindArgsTo(url, options));
+  server.on('method', bindArgsTo(method, options));
+  server.on('headers', bindArgsTo(headers, options));
+  server.on('headers', createRequest);
+  server.on('data', data => writeData(reqTransfer,data));
+  server.on('end',()=>end(reqTransfer));
 }
+
+let bindArgsTo = (fun, ...arg) => fun.bind(null, ...arg);
+
+let writeData = function (req, chunk) {
+  req.write(chunk);
+}
+
+let end = function (req) {
+  req.end();
+}
+
+let url = function (options, url) {
+  console.log(url);
+  options.path = url;
+}
+
+let method = function (options, method) {
+  options.method = method;
+}
+
+let headers = function (options, headers) {
+  options.headers = JSON.parse(headers);
+  delete options.headers.host;
+};
