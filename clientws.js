@@ -37,6 +37,7 @@ let forwardRequest = function (server) {
       });
       resp.on('end', () => {
         server.emit('end');
+        server.close();
       });
     });
     reqTransfer.on('error', (e) => {
