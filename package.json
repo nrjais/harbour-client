@@ -22,6 +22,11 @@
   },
   "homepage": "https://nrjais.github.io/harbour-client/",
   "keywords": [
+    "tunneling",
+    "localhost",
+    "transfer",
+    "http tunneling",
+    "harbour"
   ],
   "author": "nrjais"
 }
