@@ -1,14 +1,27 @@
 {
-  "name": "client",
+  "name": "harbour-client",
   "version": "1.0.0",
   "description": "",
-  "main": "client.js",
+  "main": "bin/harbour",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "",
   "license": "ISC",
+  "bin": {
+    "harbour": "./bin/harbour.js"
+  },
   "dependencies": {
     "socket.io": "^2.0.4"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nrjais/harbour-client.git"
+  },
+  "bugs": {
+    "url": "https://github.com/nrjais/harbour-client/issues"
+  },
+  "homepage": "https://nrjais.github.io/harbour-client/",
+  "keywords": [
+  ],
+  "author": "nrjais"
 }

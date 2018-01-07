@@ -1,5 +1,7 @@
+#!/usr/bin/env node
+
 const http = require('http');
-const WebSocket = require('socket.io-client');
+const Socket = require('socket.io-client');
 
 const quit = function (message) {
   console.log(message);
@@ -11,14 +13,14 @@ const quit = function (message) {
 let host = process.argv[2] || quit("No host");
 let forwardPort = process.argv[3] || quit('No port given for localhost');
 
-const socket = WebSocket('ws://' + host);
+const socket = Socket('ws://' + host);
 
 socket.on('connect', function () {
   console.log('Connected to ' + host);
 });
 
 socket.on('handshake', (id) => {
-  const client = WebSocket('ws://' + host);
+  const client = Socket('ws://' + host);
   client.on('connect', function () {
     client.emit('handshake', id);
     forwardRequest(client);
